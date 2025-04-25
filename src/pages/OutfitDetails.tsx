@@ -4,314 +4,311 @@ import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
-import { ArrowLeft, Heart, RefreshCw, Shirt, Scissors, Bookmark, Zap, Sun, Cloud, CloudRain } from "lucide-react";
+import { Heart, ArrowLeft, Swap } from "lucide-react";
+import PlusCircle from "@/components/ui/PlusCircle";
+
+interface ClothingItem {
+  id: string;
+  name: string;
+  category: string;
+  style: string;
+  color: string;
+  material: string;
+  imageUrl: string;
+}
 
 interface OutfitItem {
   id: string;
-  name: string;
-  imageUrl: string;
-  type: string;
+  category: string;
+  clothingItem: ClothingItem;
 }
 
 interface Outfit {
   id: string;
+  name: string;
+  items: OutfitItem[];
   occasion: string;
-  temp: number;
+  temperature: number;
   timeOfDay: string;
   weather: string;
-  items: {
-    top: OutfitItem;
-    bottom: OutfitItem;
-    shoes: OutfitItem;
-    accessory?: OutfitItem;
-  };
-  explanation: string;
-  styleNotes?: string[];
-  favorite: boolean;
+  isFavorite: boolean;
 }
 
-// Mock outfit data
-const mockOutfits: Record<string, Outfit> = {
-  "outfit1": {
-    id: "outfit1",
-    occasion: "Casual",
-    temp: 22,
-    timeOfDay: "Morning",
-    weather: "Sunny",
-    items: {
-      top: {
-        id: "2",
-        name: "White Cotton T-shirt",
-        type: "top",
-        imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=400&fit=crop"
-      },
-      bottom: {
-        id: "1",
-        name: "Blue Denim Jeans",
-        type: "bottom",
-        imageUrl: "https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=300&h=400&fit=crop"
-      },
-      shoes: {
-        id: "4",
-        name: "White Sneakers",
-        type: "shoes",
-        imageUrl: "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=300&h=400&fit=crop"
-      }
-    },
-    explanation: "Light cotton top selected for warm weather. Jeans provide comfort for casual occasions.",
-    styleNotes: [
-      "The neutral white top pairs well with any bottom",
-      "Classic denim works for most casual situations",
-      "Comfortable sneakers for all-day wear"
-    ],
-    favorite: false
-  },
-  "outfit2": {
-    id: "outfit2",
-    occasion: "Work",
-    temp: 18,
-    timeOfDay: "Morning",
-    weather: "Cloudy",
-    items: {
-      top: {
-        id: "5",
-        name: "Blue Button-Up Shirt",
-        type: "top",
-        imageUrl: "https://images.unsplash.com/photo-1598961942613-ba897716405b?w=300&h=400&fit=crop"
-      },
-      bottom: {
-        id: "6",
-        name: "Black Dress Pants",
-        type: "bottom",
-        imageUrl: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&h=400&fit=crop"
-      },
-      shoes: {
-        id: "7",
-        name: "Black Dress Shoes",
-        type: "shoes",
-        imageUrl: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=300&h=400&fit=crop"
-      }
-    },
-    explanation: "Professional attire suitable for work. Layers for changing office temperatures.",
-    styleNotes: [
-      "Blue conveys trustworthiness in professional settings",
-      "Classic black pants for versatility",
-      "Polished shoes complete the professional look"
-    ],
-    favorite: true
-  },
-  "outfit3": {
-    id: "outfit3",
-    occasion: "Party",
-    temp: 24,
-    timeOfDay: "Evening",
-    weather: "Clear",
-    items: {
-      top: {
-        id: "8",
-        name: "Black Jacket",
-        type: "top",
-        imageUrl: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&h=400&fit=crop"
-      },
-      bottom: {
-        id: "9",
-        name: "Dark Jeans",
-        type: "bottom",
-        imageUrl: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=400&fit=crop"
-      },
-      shoes: {
-        id: "10",
-        name: "Leather Boots",
-        type: "shoes",
-        imageUrl: "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=300&h=400&fit=crop"
-      },
-      accessory: {
-        id: "11",
-        name: "Watch",
-        type: "accessory",
-        imageUrl: "https://images.unsplash.com/photo-1539874754764-5a96559165b0?w=300&h=400&fit=crop"
-      }
-    },
-    explanation: "Stylish outfit for evening events. The jacket keeps you warm as temperatures drop.",
-    styleNotes: [
-      "Black jacket creates a sleek silhouette",
-      "Dark jeans transition well from day to night",
-      "Statement boots elevate the casual base"
-    ],
-    favorite: false
-  }
-};
-
-// Mock alternative items for swapping
-const mockAlternatives: Record<string, OutfitItem[]> = {
-  "top": [
-    {
-      id: "top1",
-      name: "Striped Shirt",
-      type: "top",
-      imageUrl: "https://images.unsplash.com/photo-1608030609295-a581b8f46672?w=300&h=400&fit=crop"
-    },
-    {
-      id: "top2",
-      name: "Gray Sweater",
-      type: "top",
-      imageUrl: "https://images.unsplash.com/photo-1580331451432-511418247ba8?w=300&h=400&fit=crop"
-    },
-    {
-      id: "top3",
-      name: "Polo Shirt",
-      type: "top",
-      imageUrl: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=300&h=400&fit=crop"
-    }
-  ],
-  "bottom": [
-    {
-      id: "bottom1",
-      name: "Khaki Pants",
-      type: "bottom",
-      imageUrl: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=300&h=400&fit=crop"
-    },
-    {
-      id: "bottom2",
-      name: "Black Jeans",
-      type: "bottom",
-      imageUrl: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=300&h=400&fit=crop"
-    },
-    {
-      id: "bottom3",
-      name: "Chinos",
-      type: "bottom",
-      imageUrl: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&h=400&fit=crop"
-    }
-  ],
-  "shoes": [
-    {
-      id: "shoes1",
-      name: "Black Sneakers",
-      type: "shoes",
-      imageUrl: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=300&h=400&fit=crop"
-    },
-    {
-      id: "shoes2",
-      name: "Loafers",
-      type: "shoes",
-      imageUrl: "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=300&h=400&fit=crop"
-    },
-    {
-      id: "shoes3",
-      name: "Canvas Shoes",
-      type: "shoes",
-      imageUrl: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=300&h=400&fit=crop"
-    }
-  ],
-  "accessory": [
-    {
-      id: "acc1",
-      name: "Silver Necklace",
-      type: "accessory",
-      imageUrl: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&h=400&fit=crop"
-    },
-    {
-      id: "acc2",
-      name: "Leather Belt",
-      type: "accessory",
-      imageUrl: "https://images.unsplash.com/photo-1594223274512-ad4b5ead7ecc?w=300&h=400&fit=crop"
-    },
-    {
-      id: "acc3",
-      name: "Beanie",
-      type: "accessory",
-      imageUrl: "https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=300&h=400&fit=crop"
-    }
-  ]
-};
-
 const OutfitDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [outfit, setOutfit] = useState<Outfit | null>(null);
   const [loading, setLoading] = useState(true);
-  const [swapping, setSwapping] = useState<string | null>(null);
-  const [itemType, setItemType] = useState<string | null>(null);
-  const [alternativeItems, setAlternativeItems] = useState<OutfitItem[]>([]);
+  const [swapCategory, setSwapCategory] = useState<string | null>(null);
+  const [showSwapDialog, setShowSwapDialog] = useState(false);
+  const [alternativeItems, setAlternativeItems] = useState<ClothingItem[]>([]);
+  const [selectedAlternative, setSelectedAlternative] = useState<string | null>(null);
 
+  // Mock data - in a real app, this would be fetched from an API
   useEffect(() => {
-    // Fetch outfit details - using mock data for now
-    if (id && mockOutfits[id]) {
-      setTimeout(() => {
-        setOutfit(mockOutfits[id]);
+    const fetchOutfit = async () => {
+      try {
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Mock outfit data
+        const mockOutfit: Outfit = {
+          id: id || "outfit_1",
+          name: "Casual Blue Ensemble",
+          occasion: "Casual",
+          temperature: 22,
+          timeOfDay: "Afternoon",
+          weather: "Sunny",
+          isFavorite: false,
+          items: [
+            {
+              id: "outfit_item_1",
+              category: "top",
+              clothingItem: {
+                id: "clothing_1",
+                name: "Blue Cotton T-shirt",
+                category: "top",
+                style: "casual",
+                color: "blue",
+                material: "cotton",
+                imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300",
+              },
+            },
+            {
+              id: "outfit_item_2",
+              category: "bottom",
+              clothingItem: {
+                id: "clothing_2",
+                name: "Slim Fit Jeans",
+                category: "bottom",
+                style: "casual",
+                color: "blue",
+                material: "denim",
+                imageUrl: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=300",
+              },
+            },
+            {
+              id: "outfit_item_3",
+              category: "shoes",
+              clothingItem: {
+                id: "clothing_3",
+                name: "White Sneakers",
+                category: "shoes",
+                style: "casual",
+                color: "white",
+                material: "canvas",
+                imageUrl: "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=300",
+              },
+            },
+            {
+              id: "outfit_item_4",
+              category: "accessory",
+              clothingItem: {
+                id: "clothing_4",
+                name: "Silver Watch",
+                category: "accessory",
+                style: "casual",
+                color: "silver",
+                material: "metal",
+                imageUrl: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=300",
+              },
+            },
+          ],
+        };
+
+        setOutfit(mockOutfit);
         setLoading(false);
-      }, 1000);
-    } else {
-      navigate("/outfits");
-      toast.error("Outfit not found");
-    }
-  }, [id, navigate]);
-
-  const handleToggleFavorite = () => {
-    if (!outfit) return;
-    
-    const updatedOutfit = { ...outfit, favorite: !outfit.favorite };
-    setOutfit(updatedOutfit);
-    
-    // In a real app, we would update this in the backend
-    toast.success(`Outfit ${updatedOutfit.favorite ? 'added to' : 'removed from'} favorites`);
-  };
-
-  const handleSwapItem = (type: string) => {
-    setItemType(type);
-    setSwapping("loading");
-    
-    // Fetch alternative items - using mock data for now
-    setTimeout(() => {
-      if (mockAlternatives[type]) {
-        setAlternativeItems(mockAlternatives[type]);
-        setSwapping("selecting");
-      } else {
-        setSwapping(null);
-        toast.error("No alternatives found");
+      } catch (error) {
+        console.error("Error fetching outfit:", error);
+        toast.error("Failed to load outfit details");
+        setLoading(false);
       }
-    }, 1000);
-  };
-
-  const handleSelectAlternative = (item: OutfitItem) => {
-    if (!outfit || !itemType) return;
-    
-    // Update outfit with new item
-    const updatedOutfit = { 
-      ...outfit, 
-      items: { 
-        ...outfit.items, 
-        [itemType]: item 
-      } 
     };
-    
-    setOutfit(updatedOutfit);
-    setSwapping(null);
-    toast.success(`${item.name} added to outfit`);
+
+    fetchOutfit();
+  }, [id]);
+
+  const handleBack = () => {
+    navigate("/outfits");
   };
 
-  const renderWeatherIcon = (weather: string) => {
-    switch (weather.toLowerCase()) {
-      case "sunny":
-        return <Sun className="w-5 h-5" />;
-      case "cloudy":
-        return <Cloud className="w-5 h-5" />;
-      case "rainy":
-        return <CloudRain className="w-5 h-5" />;
-      default:
-        return <Sun className="w-5 h-5" />;
+  const toggleFavorite = () => {
+    if (outfit) {
+      const updatedOutfit = { ...outfit, isFavorite: !outfit.isFavorite };
+      setOutfit(updatedOutfit);
+      
+      // In a real app, this would update the database
+      const message = updatedOutfit.isFavorite
+        ? "Outfit added to favorites"
+        : "Outfit removed from favorites";
+      
+      toast.success(message);
     }
   };
 
-  if (loading || !outfit) {
+  const openSwapDialog = (category: string) => {
+    setSwapCategory(category);
+    
+    // Generate alternative items based on category
+    // In a real app, these would be fetched from the user's wardrobe
+    // based on the outfit's occasion, weather, etc.
+    const getMockAlternatives = (category: string): ClothingItem[] => {
+      switch (category) {
+        case "top":
+          return [
+            {
+              id: "alt_top_1",
+              name: "White Button-up Shirt",
+              category: "top",
+              style: "smart-casual",
+              color: "white",
+              material: "cotton",
+              imageUrl: "https://images.unsplash.com/photo-1598961942613-ba897716405b?w=300",
+            },
+            {
+              id: "alt_top_2",
+              name: "Navy Polo Shirt",
+              category: "top",
+              style: "casual",
+              color: "navy",
+              material: "cotton",
+              imageUrl: "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=300",
+            },
+          ];
+        case "bottom":
+          return [
+            {
+              id: "alt_bottom_1",
+              name: "Khaki Chinos",
+              category: "bottom",
+              style: "smart-casual",
+              color: "khaki",
+              material: "cotton",
+              imageUrl: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300",
+            },
+            {
+              id: "alt_bottom_2",
+              name: "Black Jeans",
+              category: "bottom",
+              style: "casual",
+              color: "black",
+              material: "denim",
+              imageUrl: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=300",
+            },
+          ];
+        case "shoes":
+          return [
+            {
+              id: "alt_shoes_1",
+              name: "Brown Leather Boots",
+              category: "shoes",
+              style: "casual",
+              color: "brown",
+              material: "leather",
+              imageUrl: "https://images.unsplash.com/photo-1520639888713-7851133b1ed0?w=300",
+            },
+            {
+              id: "alt_shoes_2",
+              name: "Black Canvas Sneakers",
+              category: "shoes",
+              style: "casual",
+              color: "black",
+              material: "canvas",
+              imageUrl: "https://images.unsplash.com/photo-1527010154944-f2241763d806?w=300",
+            },
+          ];
+        case "accessory":
+          return [
+            {
+              id: "alt_accessory_1",
+              name: "Black Leather Belt",
+              category: "accessory",
+              style: "casual",
+              color: "black",
+              material: "leather",
+              imageUrl: "https://images.unsplash.com/photo-1553704571-c32d20e6c81f?w=300",
+            },
+            {
+              id: "alt_accessory_2",
+              name: "Sunglasses",
+              category: "accessory",
+              style: "casual",
+              color: "black",
+              material: "plastic",
+              imageUrl: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=300",
+            },
+          ];
+        default:
+          return [];
+      }
+    };
+
+    setAlternativeItems(getMockAlternatives(category));
+    setShowSwapDialog(true);
+  };
+
+  const handleSwapItem = () => {
+    if (!outfit || !swapCategory || !selectedAlternative) {
+      return;
+    }
+
+    // Find the selected alternative item
+    const selectedItem = alternativeItems.find(
+      (item) => item.id === selectedAlternative
+    );
+
+    if (!selectedItem) {
+      return;
+    }
+
+    // Update the outfit with the new item
+    const updatedItems = outfit.items.map((item) => {
+      if (item.category === swapCategory) {
+        return {
+          ...item,
+          clothingItem: selectedItem,
+        };
+      }
+      return item;
+    });
+
+    setOutfit({
+      ...outfit,
+      items: updatedItems,
+    });
+
+    setShowSwapDialog(false);
+    setSelectedAlternative(null);
+    toast.success(`${swapCategory.charAt(0).toUpperCase() + swapCategory.slice(1)} swapped successfully`);
+  };
+
+  if (loading) {
     return (
       <MainLayout>
-        <div className="max-w-xl mx-auto p-4 flex flex-col items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3A8DFF] mb-4"></div>
-          <p className="text-gray-500">Loading outfit details...</p>
+        <div className="max-w-xl mx-auto p-4 flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3A8DFF]"></div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!outfit) {
+    return (
+      <MainLayout>
+        <div className="max-w-xl mx-auto p-4">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-2">Outfit Not Found</h2>
+            <p className="text-gray-600 mb-6">This outfit doesn't exist or has been removed.</p>
+            <Button onClick={handleBack}>Return to Outfits</Button>
+          </div>
         </div>
       </MainLayout>
     );
@@ -320,354 +317,146 @@ const OutfitDetails = () => {
   return (
     <MainLayout>
       <div className="max-w-xl mx-auto p-4">
-        <div className="mb-6">
+        {/* Back button and header */}
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="ghost" className="p-1" onClick={handleBack}>
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-xl font-bold">{outfit.name}</h1>
           <Button 
             variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="mb-2"
+            className="p-1"
+            onClick={toggleFavorite}
           >
-            <ArrowLeft className="w-4 h-4 mr-1" /> Back to Outfits
+            <Heart
+              className={`h-6 w-6 ${outfit.isFavorite ? "fill-red-500 text-red-500" : ""}`}
+            />
           </Button>
-          <h1 className="text-2xl font-bold">{outfit.occasion} Outfit</h1>
         </div>
 
-        {/* Outfit Info Card */}
-        <Card className="mb-6 overflow-hidden">
-          <CardContent className="p-0">
-            <div className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div>
-                  {renderWeatherIcon(outfit.weather)}
-                </div>
-                <div>
-                  <h2 className="font-medium">{outfit.weather}, {outfit.temp}°C</h2>
-                  <p className="text-sm text-gray-500">{outfit.timeOfDay}</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleToggleFavorite}
-                className={outfit.favorite ? "text-red-500" : "text-gray-400"}
-              >
-                <Heart className={`w-5 h-5 ${outfit.favorite ? "fill-red-500" : ""}`} />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Outfit context */}
+        <div className="bg-[#A3E4FF50] rounded-lg p-3 mb-4 flex items-center justify-between">
+          <div>
+            <span className="inline-block bg-[#0057D830] text-[#0057D8] rounded-full px-2 py-1 text-xs font-semibold mr-2">
+              {outfit.occasion}
+            </span>
+            <span className="inline-block bg-[#0057D830] text-[#0057D8] rounded-full px-2 py-1 text-xs font-semibold mr-2">
+              {outfit.temperature}°C
+            </span>
+            <span className="inline-block bg-[#0057D830] text-[#0057D8] rounded-full px-2 py-1 text-xs font-semibold">
+              {outfit.weather}
+            </span>
+          </div>
+          <div className="text-xs text-gray-600">{outfit.timeOfDay}</div>
+        </div>
 
-        {/* Full Outfit Preview */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <Card className="col-span-2 overflow-hidden">
-            <div className="aspect-[3/4] relative">
-              {/* This would be a full outfit image in a real app */}
-              <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-                <div className="relative">
-                  <img
-                    src={outfit.items.top.imageUrl}
-                    alt={outfit.items.top.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 left-2 bg-white/80 text-xs px-2 py-1 rounded">
-                    Top
-                  </div>
-                </div>
-                <div className="relative">
-                  <img
-                    src={outfit.items.bottom.imageUrl}
-                    alt={outfit.items.bottom.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 left-2 bg-white/80 text-xs px-2 py-1 rounded">
-                    Bottom
-                  </div>
-                </div>
-                <div className="relative">
-                  <img
-                    src={outfit.items.shoes.imageUrl}
-                    alt={outfit.items.shoes.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 left-2 bg-white/80 text-xs px-2 py-1 rounded">
-                    Shoes
-                  </div>
-                </div>
-                {outfit.items.accessory ? (
-                  <div className="relative">
-                    <img
-                      src={outfit.items.accessory.imageUrl}
-                      alt={outfit.items.accessory.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 left-2 bg-white/80 text-xs px-2 py-1 rounded">
-                      Accessory
+        {/* Style tip */}
+        <div className="bg-[#F2F2F2] rounded-lg p-4 mb-6 border-l-4 border-[#3A8DFF]">
+          <h3 className="font-medium mb-1">Style Tip</h3>
+          <p className="text-sm text-gray-700">
+            This outfit works well for your body shape. The fitted top highlights your
+            proportions while the straight-leg jeans create a balanced silhouette.
+          </p>
+        </div>
+
+        {/* Outfit items */}
+        <div className="space-y-4">
+          {outfit.items.map((item) => (
+            <Card key={item.id} className="overflow-hidden">
+              <div className="flex">
+                <img
+                  src={item.clothingItem.imageUrl}
+                  alt={item.clothingItem.name}
+                  className="w-24 h-24 object-cover"
+                />
+                <CardContent className="flex-1 p-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium">
+                        {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
+                      </h3>
+                      <p className="text-sm text-gray-600">{item.clothingItem.name}</p>
+                      <div className="flex gap-1 mt-1">
+                        <span className="inline-block bg-gray-100 rounded-full px-2 py-0.5 text-xs">
+                          {item.clothingItem.color}
+                        </span>
+                        <span className="inline-block bg-gray-100 rounded-full px-2 py-0.5 text-xs">
+                          {item.clothingItem.material}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="bg-gray-100 flex items-center justify-center">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="ghost"
                       size="sm"
-                      onClick={() => handleSwapItem('accessory')}
+                      className="p-1 h-8 w-8"
+                      onClick={() => openSwapDialog(item.category)}
                     >
-                      <PlusCircle className="w-4 h-4 mr-1" /> Add Accessory
+                      <Swap className="h-4 w-4" />
                     </Button>
                   </div>
-                )}
+                </CardContent>
               </div>
-            </div>
-            <CardContent className="p-4">
-              <p className="text-gray-700">{outfit.explanation}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Outfit Details */}
-        <h2 className="text-xl font-semibold mb-3">Outfit Breakdown</h2>
-        <div className="space-y-3 mb-6">
-          {/* Top */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded overflow-hidden mr-3">
-                  <img
-                    src={outfit.items.top.imageUrl}
-                    alt={outfit.items.top.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Shirt className="w-4 h-4 text-gray-500" />
-                    <h3 className="font-medium">Top</h3>
-                  </div>
-                  <p className="text-sm">{outfit.items.top.name}</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSwapItem('top')}
-                  className="whitespace-nowrap"
-                >
-                  <RefreshCw className="w-4 h-4 mr-1" /> Swap
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Bottom */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded overflow-hidden mr-3">
-                  <img
-                    src={outfit.items.bottom.imageUrl}
-                    alt={outfit.items.bottom.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Scissors className="w-4 h-4 text-gray-500" />
-                    <h3 className="font-medium">Bottom</h3>
-                  </div>
-                  <p className="text-sm">{outfit.items.bottom.name}</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSwapItem('bottom')}
-                  className="whitespace-nowrap"
-                >
-                  <RefreshCw className="w-4 h-4 mr-1" /> Swap
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Shoes */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded overflow-hidden mr-3">
-                  <img
-                    src={outfit.items.shoes.imageUrl}
-                    alt={outfit.items.shoes.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-gray-500"
-                    >
-                      <path d="M2 6h18v4c0 3-2 4-2 4H4s-2-1-2-4V6z" />
-                      <path d="M2 10s2 1 2 8v1" />
-                      <path d="M22 10s-2 1-2 8v1" />
-                      <path d="m2 6 10-4" />
-                      <path d="m22 6-10-4" />
-                    </svg>
-                    <h3 className="font-medium">Shoes</h3>
-                  </div>
-                  <p className="text-sm">{outfit.items.shoes.name}</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSwapItem('shoes')}
-                  className="whitespace-nowrap"
-                >
-                  <RefreshCw className="w-4 h-4 mr-1" /> Swap
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Accessory if exists */}
-          {outfit.items.accessory && (
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center">
-                  <div className="w-16 h-16 rounded overflow-hidden mr-3">
-                    <img
-                      src={outfit.items.accessory.imageUrl}
-                      alt={outfit.items.accessory.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-gray-500"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <circle cx="12" cy="12" r="6" />
-                        <circle cx="12" cy="12" r="2" />
-                      </svg>
-                      <h3 className="font-medium">Accessory</h3>
-                    </div>
-                    <p className="text-sm">{outfit.items.accessory.name}</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSwapItem('accessory')}
-                    className="whitespace-nowrap"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-1" /> Swap
-                  </Button>
-                </div>
-              </CardContent>
             </Card>
-          )}
-        </div>
+          ))}
 
-        {/* Style Notes */}
-        {outfit.styleNotes && outfit.styleNotes.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-3 flex items-center">
-              <Zap className="w-5 h-5 mr-1 text-[#3A8DFF]" /> Style Notes
-            </h2>
-            <Card>
-              <CardContent className="p-4">
-                <ul className="space-y-2">
-                  {outfit.styleNotes.map((note, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="h-2 w-2 mt-2 rounded-full bg-[#3A8DFF] mr-2 flex-shrink-0"></span>
-                      <span>{note}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-3">
+          {/* Add accessory button */}
           <Button 
-            variant={outfit.favorite ? "outline" : "default"}
-            onClick={handleToggleFavorite}
-            className="flex items-center justify-center"
+            variant="outline" 
+            className="w-full py-6 flex items-center justify-center border-dashed"
+            onClick={() => openSwapDialog("accessory")}
           >
-            {outfit.favorite ? (
-              <>
-                <Bookmark className="w-5 h-5 mr-1" /> Saved
-              </>
-            ) : (
-              <>
-                <Heart className="w-5 h-5 mr-1" /> Save Outfit
-              </>
-            )}
-          </Button>
-          <Button 
-            onClick={() => navigate('/outfits')}
-            className="flex items-center justify-center"
-          >
-            <RefreshCw className="w-5 h-5 mr-1" /> Try New Outfit
+            <PlusCircle className="h-5 w-5 mr-2" />
+            Add Accessory
           </Button>
         </div>
-      </div>
 
-      {/* Item Swapping Dialog */}
-      <Dialog open={!!swapping} onOpenChange={(open) => !open && setSwapping(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
-              {swapping === "loading" 
-                ? "Finding Alternatives..." 
-                : `Choose Alternative ${itemType?.charAt(0).toUpperCase()}${itemType?.slice(1)}`
-              }
-            </DialogTitle>
-          </DialogHeader>
-          
-          {swapping === "loading" ? (
-            <div className="py-8 flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3A8DFF]"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 py-4">
+        {/* Swap dialog */}
+        <Dialog open={showSwapDialog} onOpenChange={setShowSwapDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                Swap {swapCategory?.charAt(0).toUpperCase() + swapCategory?.slice(1)}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-3">
               {alternativeItems.map((item) => (
-                <Card 
-                  key={item.id} 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleSelectAlternative(item)}
+                <div
+                  key={item.id}
+                  className={`flex items-center p-2 rounded-lg cursor-pointer
+                    ${selectedAlternative === item.id ? "border border-[#3A8DFF] bg-[#A3E4FF20]" : "border border-gray-200"}
+                  `}
+                  onClick={() => setSelectedAlternative(item.id)}
                 >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div className="ml-3">
+                    <h4 className="font-medium">{item.name}</h4>
+                    <div className="flex gap-1 mt-1">
+                      <span className="inline-block bg-gray-100 rounded-full px-2 py-0.5 text-xs">
+                        {item.color}
+                      </span>
+                      <span className="inline-block bg-gray-100 rounded-full px-2 py-0.5 text-xs">
+                        {item.material}
+                      </span>
+                    </div>
                   </div>
-                  <CardContent className="p-2">
-                    <p className="text-sm font-medium truncate">{item.name}</p>
-                  </CardContent>
-                </Card>
+                </div>
               ))}
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSwapDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSwapItem} disabled={!selectedAlternative}>
+                Swap Item
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </MainLayout>
   );
 };

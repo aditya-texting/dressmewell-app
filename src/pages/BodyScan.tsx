@@ -297,7 +297,7 @@ const BodyScan = () => {
 
       {/* Processing Dialog */}
       <Dialog open={processingImage} onOpenChange={setProcessingImage}>
-        <DialogContent className="sm:max-w-[425px]" hideClose>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Analyzing your body shape</DialogTitle>
             <DialogDescription>
