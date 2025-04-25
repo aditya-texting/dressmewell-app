@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -12,7 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
-import { Heart, ArrowLeft, Swap } from "lucide-react";
+import { Heart, ArrowLeft, RefreshCw as Swap } from "lucide-react";
 import PlusCircle from "@/components/ui/PlusCircle";
 
 interface ClothingItem {
@@ -52,14 +51,11 @@ const OutfitDetails = () => {
   const [alternativeItems, setAlternativeItems] = useState<ClothingItem[]>([]);
   const [selectedAlternative, setSelectedAlternative] = useState<string | null>(null);
 
-  // Mock data - in a real app, this would be fetched from an API
   useEffect(() => {
     const fetchOutfit = async () => {
       try {
-        // Simulate API delay
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Mock outfit data
         const mockOutfit: Outfit = {
           id: id || "outfit_1",
           name: "Casual Blue Ensemble",
@@ -145,7 +141,6 @@ const OutfitDetails = () => {
       const updatedOutfit = { ...outfit, isFavorite: !outfit.isFavorite };
       setOutfit(updatedOutfit);
       
-      // In a real app, this would update the database
       const message = updatedOutfit.isFavorite
         ? "Outfit added to favorites"
         : "Outfit removed from favorites";
@@ -157,9 +152,6 @@ const OutfitDetails = () => {
   const openSwapDialog = (category: string) => {
     setSwapCategory(category);
     
-    // Generate alternative items based on category
-    // In a real app, these would be fetched from the user's wardrobe
-    // based on the outfit's occasion, weather, etc.
     const getMockAlternatives = (category: string): ClothingItem[] => {
       switch (category) {
         case "top":
@@ -260,7 +252,6 @@ const OutfitDetails = () => {
       return;
     }
 
-    // Find the selected alternative item
     const selectedItem = alternativeItems.find(
       (item) => item.id === selectedAlternative
     );
@@ -269,7 +260,6 @@ const OutfitDetails = () => {
       return;
     }
 
-    // Update the outfit with the new item
     const updatedItems = outfit.items.map((item) => {
       if (item.category === swapCategory) {
         return {
@@ -317,7 +307,6 @@ const OutfitDetails = () => {
   return (
     <MainLayout>
       <div className="max-w-xl mx-auto p-4">
-        {/* Back button and header */}
         <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" className="p-1" onClick={handleBack}>
             <ArrowLeft className="h-6 w-6" />
@@ -334,7 +323,6 @@ const OutfitDetails = () => {
           </Button>
         </div>
 
-        {/* Outfit context */}
         <div className="bg-[#A3E4FF50] rounded-lg p-3 mb-4 flex items-center justify-between">
           <div>
             <span className="inline-block bg-[#0057D830] text-[#0057D8] rounded-full px-2 py-1 text-xs font-semibold mr-2">
@@ -350,7 +338,6 @@ const OutfitDetails = () => {
           <div className="text-xs text-gray-600">{outfit.timeOfDay}</div>
         </div>
 
-        {/* Style tip */}
         <div className="bg-[#F2F2F2] rounded-lg p-4 mb-6 border-l-4 border-[#3A8DFF]">
           <h3 className="font-medium mb-1">Style Tip</h3>
           <p className="text-sm text-gray-700">
@@ -359,7 +346,6 @@ const OutfitDetails = () => {
           </p>
         </div>
 
-        {/* Outfit items */}
         <div className="space-y-4">
           {outfit.items.map((item) => (
             <Card key={item.id} className="overflow-hidden">
@@ -399,7 +385,6 @@ const OutfitDetails = () => {
             </Card>
           ))}
 
-          {/* Add accessory button */}
           <Button 
             variant="outline" 
             className="w-full py-6 flex items-center justify-center border-dashed"
@@ -410,7 +395,6 @@ const OutfitDetails = () => {
           </Button>
         </div>
 
-        {/* Swap dialog */}
         <Dialog open={showSwapDialog} onOpenChange={setShowSwapDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
