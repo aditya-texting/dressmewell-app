@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -8,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
 import { Camera, Image, Upload } from "lucide-react";
+import { analyzeBodyShape } from "@/utils/bodyShapeAnalysis";
 
 type BodyShape = "hourglass" | "pear" | "apple" | "rectangle" | "inverted-triangle";
 
@@ -88,24 +88,30 @@ const BodyScan = () => {
     if (scanStep < scanSteps.length - 1) {
       setScanStep(scanStep + 1);
     } else {
-      // Start camera
       setShowCamera(true);
     }
   };
 
-  const handleCaptureImage = () => {
-    // In a real app, we would use a computer vision API to analyze the body
-    // For now, we'll simulate processing with the uploaded or camera image
+  const handleCaptureImage = async () => {
+    if (!uploadedImage) {
+      toast.error('Please upload an image first');
+      return;
+    }
+
     setProcessingImage(true);
     
-    setTimeout(() => {
-      // Mock result - in real app would be from computer vision API analysis
-      const detectedShape = bodyShapes[Math.floor(Math.random() * bodyShapes.length)].id;
-      setSelectedBodyShape(detectedShape);
+    try {
+      const detectedShape = await analyzeBodyShape(uploadedImage);
+      setSelectedBodyShape(detectedShape as any);
+      toast.success('Body shape analysis complete!');
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast.error('Failed to analyze body shape. Please try again.');
+    } finally {
       setProcessingImage(false);
       setShowCamera(false);
       setShowResults(true);
-    }, 3000);
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,11 +128,7 @@ const BodyScan = () => {
     const fileUrl = URL.createObjectURL(file);
     setUploadedImage(fileUrl);
     
-    // Show toast notification
     toast.success('Image uploaded successfully');
-    
-    // Process the image
-    handleCaptureImage();
   };
 
   const triggerFileUpload = () => {
@@ -155,14 +157,12 @@ const BodyScan = () => {
       <div className="max-w-xl mx-auto p-4">
         <h1 className="text-2xl font-bold mb-6">Body Shape Analysis</h1>
 
-        {/* Steps display when not showing camera or results */}
         {!showCamera && !showResults && (
           <Card className="mb-6">
             <CardContent className="pt-6">
               <h2 className="text-xl font-semibold">{scanSteps[scanStep].title}</h2>
               <p className="text-gray-600 dark:text-gray-400 mt-2">{scanSteps[scanStep].description}</p>
               
-              {/* Illustration placeholder */}
               <div className="my-6 h-48 rounded-lg bg-[#A3E4FF] dark:bg-blue-900 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#0057D8] dark:text-blue-300">
                   <path d="M15 2H9a1 1 0 0 0-1 1v2a4 4 0 0 0 8 0V3a1 1 0 0 0-1-1Z" />
@@ -186,7 +186,6 @@ const BodyScan = () => {
           </Card>
         )}
         
-        {/* Camera view */}
         {showCamera && (
           <Card className="mb-6">
             <CardContent className="pt-6 space-y-4">
@@ -213,7 +212,6 @@ const BodyScan = () => {
                   </div>
                 )}
                 
-                {/* Pose landmarks overlay - would be dynamic in real app */}
                 {uploadedImage && (
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400">
                     <circle cx="150" cy="80" r="5" fill="#A3E4FF" />
@@ -259,7 +257,6 @@ const BodyScan = () => {
                 </Button>
               </div>
               
-              {/* Hidden file input for image uploads */}
               <input
                 type="file"
                 ref={fileInputRef}
@@ -284,7 +281,6 @@ const BodyScan = () => {
           </Card>
         )}
         
-        {/* Results view */}
         {showResults && (
           <div className="space-y-6">
             <Card>
@@ -344,7 +340,6 @@ const BodyScan = () => {
         )}
       </div>
 
-      {/* Processing Dialog */}
       <Dialog open={processingImage} onOpenChange={setProcessingImage}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
