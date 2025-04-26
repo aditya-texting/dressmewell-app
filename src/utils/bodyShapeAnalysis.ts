@@ -23,14 +23,22 @@ export const analyzeBodyShape = async (imageUrl: string): Promise<string> => {
     
     // The result could be an array or a single object with multiple predictions
     // We need to handle both cases
-    let topPrediction;
+    let topPrediction: { label: string, score: number } | null = null;
     
     if (Array.isArray(result)) {
-      // If result is an array, take the first item (which should contain predictions)
-      topPrediction = result[0]?.length ? result[0][0] : null;
+      // If result is an array, take the first item
+      if (result.length > 0) {
+        // Check if the first item is also an array
+        if (Array.isArray(result[0])) {
+          topPrediction = result[0][0] as any;
+        } else {
+          // First item is an object
+          topPrediction = result[0] as any;
+        }
+      }
     } else {
-      // If result is a single object with predictions
-      topPrediction = Array.isArray(result) ? result[0] : result;
+      // Result is a single object with predictions
+      topPrediction = result as any;
     }
     
     if (!topPrediction || !topPrediction.label) {
