@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
-import { Camera, Image } from "lucide-react";
+import { Camera, Image, Upload } from "lucide-react";
 
 type BodyShape = "hourglass" | "pear" | "apple" | "rectangle" | "inverted-triangle";
 
@@ -25,6 +25,8 @@ const BodyScan = () => {
   const [showResults, setShowResults] = useState<boolean>(false);
   const [selectedBodyShape, setSelectedBodyShape] = useState<BodyShape | null>(null);
   const [processingImage, setProcessingImage] = useState<boolean>(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scanSteps: ScanStep[] = [
     {
@@ -76,7 +78,7 @@ const BodyScan = () => {
     },
     {
       id: "inverted-triangle",
-      name: "Inverted Triangle",
+      name: "Inverted-Triangle",
       description: "Shoulders wider than hips",
       imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=200&h=300&fit=crop"
     }
@@ -92,12 +94,12 @@ const BodyScan = () => {
   };
 
   const handleCaptureImage = () => {
-    // In a real app, we would use MediaPipe Pose to analyze the body
-    // For now, we'll simulate processing and show results
+    // In a real app, we would use a computer vision API to analyze the body
+    // For now, we'll simulate processing with the uploaded or camera image
     setProcessingImage(true);
     
     setTimeout(() => {
-      // Mock result - in real app would be from MediaPipe analysis
+      // Mock result - in real app would be from computer vision API analysis
       const detectedShape = bodyShapes[Math.floor(Math.random() * bodyShapes.length)].id;
       setSelectedBodyShape(detectedShape);
       setProcessingImage(false);
@@ -106,10 +108,30 @@ const BodyScan = () => {
     }, 3000);
   };
 
-  const handleUploadImage = () => {
-    // This would be implemented with a file input in real app
-    toast.info("Image upload would be implemented here");
-    handleCaptureImage(); // For demo, we'll just trigger the same flow
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file is an image
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Create URL for the image
+    const fileUrl = URL.createObjectURL(file);
+    setUploadedImage(fileUrl);
+    
+    // Show toast notification
+    toast.success('Image uploaded successfully');
+    
+    // Process the image
+    handleCaptureImage();
+  };
+
+  const triggerFileUpload = () => {
+    // Programmatically click the hidden file input
+    fileInputRef.current?.click();
   };
 
   const handleConfirmBodyShape = async () => {
@@ -138,11 +160,11 @@ const BodyScan = () => {
           <Card className="mb-6">
             <CardContent className="pt-6">
               <h2 className="text-xl font-semibold">{scanSteps[scanStep].title}</h2>
-              <p className="text-gray-600 mt-2">{scanSteps[scanStep].description}</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">{scanSteps[scanStep].description}</p>
               
               {/* Illustration placeholder */}
-              <div className="my-6 h-48 rounded-lg bg-[#A3E4FF] flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#0057D8]">
+              <div className="my-6 h-48 rounded-lg bg-[#A3E4FF] dark:bg-blue-900 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#0057D8] dark:text-blue-300">
                   <path d="M15 2H9a1 1 0 0 0-1 1v2a4 4 0 0 0 8 0V3a1 1 0 0 0-1-1Z" />
                   <path d="M8 12a5 5 0 0 1 8 0" />
                   <path d="M17 18.5a9 9 0 1 0-10 0" />
@@ -169,46 +191,63 @@ const BodyScan = () => {
           <Card className="mb-6">
             <CardContent className="pt-6 space-y-4">
               <div className="aspect-[3/4] bg-gray-800 rounded-lg flex items-center justify-center relative overflow-hidden">
-                {/* This would be a live camera feed in a real app */}
-                <div className="absolute inset-0 grid place-items-center">
-                  <div className="text-white text-center p-4">
-                    <p>Camera preview would appear here</p>
-                    <p className="text-sm text-gray-300 mt-2">
-                      Stand with your full body visible
-                    </p>
+                {uploadedImage ? (
+                  <div className="absolute inset-0">
+                    <img 
+                      src={uploadedImage} 
+                      alt="Uploaded" 
+                      className="w-full h-full object-contain"
+                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="absolute inset-0 grid place-items-center">
+                    <div className="text-white text-center p-4">
+                      <p>Camera preview would appear here</p>
+                      <p className="text-sm text-gray-300 mt-2">
+                        Stand with your full body visible
+                      </p>
+                      <p className="text-xs text-gray-400 mt-4">
+                        Note: This is currently a demo. In a production app, a real camera feed would be integrated here.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Pose landmarks overlay - would be dynamic in real app */}
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400">
-                  <circle cx="150" cy="80" r="5" fill="#A3E4FF" />
-                  <circle cx="130" cy="110" r="5" fill="#A3E4FF" />
-                  <circle cx="170" cy="110" r="5" fill="#A3E4FF" />
-                  <circle cx="150" cy="150" r="5" fill="#A3E4FF" />
-                  <circle cx="120" cy="180" r="5" fill="#A3E4FF" />
-                  <circle cx="180" cy="180" r="5" fill="#A3E4FF" />
-                  <circle cx="120" cy="250" r="5" fill="#A3E4FF" />
-                  <circle cx="180" cy="250" r="5" fill="#A3E4FF" />
-                  <circle cx="120" cy="320" r="5" fill="#A3E4FF" />
-                  <circle cx="180" cy="320" r="5" fill="#A3E4FF" />
-                  
-                  <line x1="150" y1="80" x2="130" y2="110" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="150" y1="80" x2="170" y2="110" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="130" y1="110" x2="150" y2="150" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="170" y1="110" x2="150" y2="150" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="150" y1="150" x2="120" y2="180" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="150" y1="150" x2="180" y2="180" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="120" y1="180" x2="120" y2="250" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="180" y1="180" x2="180" y2="250" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="120" y1="250" x2="120" y2="320" stroke="#A3E4FF" strokeWidth="2" />
-                  <line x1="180" y1="250" x2="180" y2="320" stroke="#A3E4FF" strokeWidth="2" />
-                </svg>
+                {uploadedImage && (
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400">
+                    <circle cx="150" cy="80" r="5" fill="#A3E4FF" />
+                    <circle cx="130" cy="110" r="5" fill="#A3E4FF" />
+                    <circle cx="170" cy="110" r="5" fill="#A3E4FF" />
+                    <circle cx="150" cy="150" r="5" fill="#A3E4FF" />
+                    <circle cx="120" cy="180" r="5" fill="#A3E4FF" />
+                    <circle cx="180" cy="180" r="5" fill="#A3E4FF" />
+                    <circle cx="120" cy="250" r="5" fill="#A3E4FF" />
+                    <circle cx="180" cy="250" r="5" fill="#A3E4FF" />
+                    <circle cx="120" cy="320" r="5" fill="#A3E4FF" />
+                    <circle cx="180" cy="320" r="5" fill="#A3E4FF" />
+                    
+                    <line x1="150" y1="80" x2="130" y2="110" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="150" y1="80" x2="170" y2="110" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="130" y1="110" x2="150" y2="150" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="170" y1="110" x2="150" y2="150" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="150" y1="150" x2="120" y2="180" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="150" y1="150" x2="180" y2="180" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="120" y1="180" x2="120" y2="250" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="180" y1="180" x2="180" y2="250" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="120" y1="250" x2="120" y2="320" stroke="#A3E4FF" strokeWidth="2" />
+                    <line x1="180" y1="250" x2="180" y2="320" stroke="#A3E4FF" strokeWidth="2" />
+                  </svg>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-3">
                 <Button 
                   variant="outline" 
-                  onClick={() => setShowCamera(false)}
+                  onClick={() => {
+                    setShowCamera(false);
+                    setUploadedImage(null);
+                  }}
                 >
                   Cancel
                 </Button>
@@ -220,14 +259,24 @@ const BodyScan = () => {
                 </Button>
               </div>
               
+              {/* Hidden file input for image uploads */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*"
+                className="hidden"
+                disabled={processingImage}
+              />
+              
               <div className="flex justify-center">
                 <Button 
                   variant="link" 
                   className="text-[#3A8DFF]"
-                  onClick={handleUploadImage}
+                  onClick={triggerFileUpload}
                   disabled={processingImage}
                 >
-                  <Image className="h-4 w-4 mr-2" />
+                  <Upload className="h-4 w-4 mr-2" />
                   Upload from gallery instead
                 </Button>
               </div>
@@ -241,13 +290,13 @@ const BodyScan = () => {
             <Card>
               <CardContent className="pt-6">
                 <h2 className="text-xl font-semibold">Analysis Results</h2>
-                <p className="text-gray-600 mt-1">We've analyzed your body shape</p>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">We've analyzed your body shape</p>
                 
                 <div className="my-6">
                   {selectedBodyShape && (
                     <div className="text-center">
-                      <div className="w-32 h-32 mx-auto bg-[#A3E4FF] rounded-full flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#0057D8]">
+                      <div className="w-32 h-32 mx-auto bg-[#A3E4FF] dark:bg-blue-900 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#0057D8] dark:text-blue-300">
                           <path d="M15 2H9a1 1 0 0 0-1 1v2a4 4 0 0 0 8 0V3a1 1 0 0 0-1-1Z" />
                           <path d="M8 12a5 5 0 0 1 8 0" />
                           <path d="M17 18.5a9 9 0 1 0-10 0" />
@@ -256,7 +305,7 @@ const BodyScan = () => {
                       <h3 className="mt-4 text-lg font-medium">
                         {bodyShapes.find(shape => shape.id === selectedBodyShape)?.name}
                       </h3>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         {bodyShapes.find(shape => shape.id === selectedBodyShape)?.description}
                       </p>
                     </div>
@@ -282,8 +331,8 @@ const BodyScan = () => {
                     onClick={() => handleManualSelection(shape.id)}
                   >
                     <CardContent className="p-3 flex flex-col items-center text-center">
-                      <div className="w-16 h-16 rounded-full bg-[#A3E4FF] flex items-center justify-center mb-2">
-                        <span className="text-[#0057D8]">{shape.name.charAt(0)}</span>
+                      <div className="w-16 h-16 rounded-full bg-[#A3E4FF] dark:bg-blue-900 flex items-center justify-center mb-2">
+                        <span className="text-[#0057D8] dark:text-blue-300">{shape.name.charAt(0)}</span>
                       </div>
                       <h4 className="font-medium">{shape.name}</h4>
                     </CardContent>
